@@ -25,13 +25,36 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    .block-container { padding-top: 1rem; padding-bottom: 2rem; max-width: 720px; }
-    div[data-testid="stMetricValue"] { font-size: 1.4rem; }
-    .stButton > button { width: 100%; }
+    .block-container {
+        padding-top: 0.75rem;
+        padding-bottom: 5rem;
+        max-width: 720px;
+    }
+    div[data-testid="stMetricValue"] { font-size: 1.35rem; }
+    .stButton > button {
+        width: 100%;
+        min-height: 2.75rem;
+        font-size: 1rem;
+    }
+    div[data-testid="stSelectbox"] > div {
+        min-height: 2.75rem;
+    }
+    /* Esconde abas horizontais se ainda existirem */
+    .stTabs [data-baseweb="tab-list"] { display: none !important; }
     </style>
     """,
     unsafe_allow_html=True,
 )
+
+MENU_PAGINAS = [
+    ("inicio", "🏠 Início"),
+    ("clientes", "👤 Clientes"),
+    ("pacotes", "📦 Pacotes"),
+    ("sessao", "✅ Registrar sessão"),
+    ("receber", "💰 A receber"),
+    ("pagar", "📤 A pagar"),
+    ("relatorio", "📊 Relatório"),
+]
 
 
 def _senha_app() -> str:
@@ -180,7 +203,7 @@ def pagina_atendimentos():
     pacote_label = st.selectbox("Pacote (opcional)", list(pacote_opts.keys()))
     pacote_id = pacote_opts[pacote_label]
 
-    if st.button("Registrar atendimento", type="primary"):
+    if st.button("Registrar atendimento", type="primary", use_container_width=True):
         try:
             db.registrar_atendimento(cliente_id, plano, pacote_id)
             st.success("Sessão registrada! Conta a receber gerada.")
@@ -209,16 +232,14 @@ def pagina_receber():
     st.metric("Total listado", f"R$ {total:.2f}")
 
     for r in rows:
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.write(
-                f"**#{r['id']}** {r['cliente_nome']} · {r['plano']}\n\n"
-                f"R$ {r['valor']:.2f} · venc. {r['data_vencimento']} · {r['status']}"
-            )
-        with col2:
-            if r["status"] == "pendente" and st.button("Pagar", key=f"cr_{r['id']}"):
-                db.baixar_conta_receber(r["id"])
-                st.rerun()
+        with st.container(border=True):
+            st.markdown(f"**#{r['id']}** · {r['cliente_nome']}")
+            st.caption(f"{r['plano']} · venc. {r['data_vencimento']} · {r['status']}")
+            st.markdown(f"### R$ {r['valor']:.2f}")
+            if r["status"] == "pendente":
+                if st.button("Marcar como paga", key=f"cr_{r['id']}", type="primary"):
+                    db.baixar_conta_receber(r["id"])
+                    st.rerun()
 
 
 def pagina_pagar():
@@ -238,40 +259,61 @@ def pagina_pagar():
     st.divider()
     rows = db.listar_contas_pagar()
     for r in rows:
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.write(
-                f"**#{r['id']}** {r['fornecedor']}\n\n"
-                f"{r['descricao']} · R$ {r['valor']:.2f} · {r['status']}"
-            )
-        with col2:
-            if r["status"] == "pendente" and st.button("Pagar", key=f"cp_{r['id']}"):
-                db.baixar_conta_pagar(r["id"])
-                st.rerun()
+        with st.container(border=True):
+            st.markdown(f"**#{r['id']}** · {r['fornecedor'] or '—'}")
+            st.caption(f"{r['descricao'] or '—'} · {r['status']}")
+            st.markdown(f"### R$ {r['valor']:.2f}")
+            if r["status"] == "pendente":
+                if st.button("Marcar como paga", key=f"cp_{r['id']}", type="primary"):
+                    db.baixar_conta_pagar(r["id"])
+                    st.rerun()
 
 
 def pagina_relatorio():
     st.header("Relatório")
     hoje = date.today()
-    col1, col2 = st.columns(2)
-    with col1:
-        data_ini = st.date_input("De", value=hoje.replace(day=1))
-    with col2:
-        data_fim = st.date_input("Até", value=hoje)
+    data_ini = st.date_input("Data inicial", value=hoje.replace(day=1))
+    data_fim = st.date_input("Data final", value=hoje)
 
-    if st.button("Gerar relatório", type="primary"):
+    if st.button("Gerar relatório", type="primary", use_container_width=True):
+        st.session_state["relatorio_gerado"] = True
+
+    if st.session_state.get("relatorio_gerado"):
         r = db.relatorio_resultado(data_ini.isoformat(), data_fim.isoformat())
-        st.markdown(
-            f"""
-            | Item | Valor |
-            |------|-------|
-            | Receitas recebidas | R$ {r['receitas']:.2f} |
-            | Despesas pagas | R$ {r['despesas']:.2f} |
-            | **Resultado** | **R$ {r['resultado']:.2f}** |
-            | A receber (pendente) | R$ {r['pendente_receber']:.2f} |
-            | A pagar (pendente) | R$ {r['pendente_pagar']:.2f} |
-            """
+        st.divider()
+        c1, c2 = st.columns(2)
+        c1.metric("Receitas", f"R$ {r['receitas']:.2f}")
+        c2.metric("Despesas", f"R$ {r['despesas']:.2f}")
+        st.metric(
+            "Resultado do período",
+            f"R$ {r['resultado']:.2f}",
+            delta=None,
         )
+        st.divider()
+        c3, c4 = st.columns(2)
+        c3.metric("A receber", f"R$ {r['pendente_receber']:.2f}")
+        c4.metric("A pagar", f"R$ {r['pendente_pagar']:.2f}")
+
+
+def _menu_mobile():
+    """Menu em lista — sem barra de abas horizontal."""
+    labels = {k: v for k, v in MENU_PAGINAS}
+    opcoes = list(labels.values())
+    padrao = labels.get(st.session_state.get("pagina_atual", "inicio"), opcoes[0])
+
+    st.markdown("### 🏥 Clínica Fisio")
+    escolha = st.selectbox(
+        "Menu",
+        opcoes,
+        index=opcoes.index(padrao) if padrao in opcoes else 0,
+        label_visibility="collapsed",
+    )
+    for chave, rotulo in MENU_PAGINAS:
+        if rotulo == escolha:
+            st.session_state["pagina_atual"] = chave
+            break
+    st.divider()
+    return st.session_state["pagina_atual"]
 
 
 def main():
@@ -279,23 +321,18 @@ def main():
         return
 
     _logout_btn()
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
-        ["Início", "Clientes", "Pacotes", "Sessão", "Receber", "Pagar", "Relatório"]
-    )
-    with tab1:
-        pagina_inicio()
-    with tab2:
-        pagina_clientes()
-    with tab3:
-        pagina_pacotes()
-    with tab4:
-        pagina_atendimentos()
-    with tab5:
-        pagina_receber()
-    with tab6:
-        pagina_pagar()
-    with tab7:
-        pagina_relatorio()
+    pagina = _menu_mobile()
+
+    rotas = {
+        "inicio": pagina_inicio,
+        "clientes": pagina_clientes,
+        "pacotes": pagina_pacotes,
+        "sessao": pagina_atendimentos,
+        "receber": pagina_receber,
+        "pagar": pagina_pagar,
+        "relatorio": pagina_relatorio,
+    }
+    rotas[pagina]()
 
 
 if __name__ == "__main__":
