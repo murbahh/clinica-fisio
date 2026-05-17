@@ -61,11 +61,23 @@ Para uso real com vários celulares: migre depois para **PostgreSQL** (Supabase 
 
 ---
 
+## Arquivos obrigatórios no GitHub
+
+Envie **todos** estes arquivos na raiz do repositório:
+
+- `app_streamlit.py`
+- `clinica_data.py` ← banco de dados (obrigatório)
+- `crm_pages.py` ← CRM e prontuário (obrigatório)
+- `requirements-streamlit.txt`
+- `.streamlit/config.toml`
+
+Opcional: pasta `database/` (só para o app desktop).
+
 ## Estrutura usada pela web
 
 | Arquivo | Função |
 |---------|--------|
 | `app_streamlit.py` | Interface no celular |
-| `database/db.py` | SQLite e regras de negócio |
+| `clinica_data.py` | SQLite e regras de negócio |
 | `data/clinica.db` | Banco (criado ao abrir o app) |
 | `requirements-streamlit.txt` | Dependências na nuvem |

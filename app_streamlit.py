@@ -11,6 +11,7 @@ import streamlit as st
 # clinica_data.py na mesma pasta (obrigatório no GitHub / Streamlit Cloud)
 import clinica_data as db
 from clinica_data import PLANOS, VALOR_SESSAO
+from crm_pages import pagina_crm_dashboard
 
 db.init_db()
 
@@ -67,6 +68,7 @@ st.markdown(
 
 MENU_PAGINAS = [
     ("inicio", "🏠 Início"),
+    ("crm", "📋 CRM Pacientes"),
     ("clientes", "👤 Clientes"),
     ("pacotes", "📦 Pacotes"),
     ("sessao", "✅ Registrar sessão"),
@@ -345,6 +347,7 @@ def main():
 
     rotas = {
         "inicio": pagina_inicio,
+        "crm": pagina_crm_dashboard,
         "clientes": pagina_clientes,
         "pacotes": pagina_pacotes,
         "sessao": pagina_atendimentos,
