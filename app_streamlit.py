@@ -4,17 +4,13 @@ Execute: streamlit run app_streamlit.py
 """
 
 import os
-import sys
-from datetime import date, timedelta
-from pathlib import Path
+from datetime import date
 
 import streamlit as st
 
-ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(ROOT))
-
-from database import db
-from database.schema import PLANOS, VALOR_SESSAO
+# clinica_data.py na mesma pasta (obrigatório no GitHub / Streamlit Cloud)
+import clinica_data as db
+from clinica_data import PLANOS, VALOR_SESSAO
 
 db.init_db()
 
