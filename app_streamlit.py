@@ -25,10 +25,18 @@ st.set_page_config(
 st.markdown(
     """
     <style>
+    /* Espaço no topo — evita cortar título no celular (notch / barra do navegador) */
     .block-container {
-        padding-top: 0.75rem;
-        padding-bottom: 5rem;
+        padding-top: calc(2rem + env(safe-area-inset-top, 0px)) !important;
+        padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)) !important;
         max-width: 720px;
+    }
+    h1, h2, h3 {
+        margin-top: 0.75rem !important;
+        padding-top: 0.25rem !important;
+    }
+    header[data-testid="stHeader"] {
+        background: transparent;
     }
     div[data-testid="stMetricValue"] { font-size: 1.35rem; }
     .stButton > button {
@@ -39,8 +47,19 @@ st.markdown(
     div[data-testid="stSelectbox"] > div {
         min-height: 2.75rem;
     }
-    /* Esconde abas horizontais se ainda existirem */
     .stTabs [data-baseweb="tab-list"] { display: none !important; }
+
+    @media (max-width: 768px) {
+        .block-container {
+            padding-top: calc(3.5rem + env(safe-area-inset-top, 28px)) !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
+        h1 {
+            font-size: 1.6rem !important;
+            margin-top: 1rem !important;
+        }
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -68,6 +87,7 @@ def _login():
     if st.session_state.get("logado"):
         return True
 
+    st.markdown('<div style="height:1.25rem"></div>', unsafe_allow_html=True)
     st.title("🏥 Clínica Fisio")
     st.caption("Acesso pelo celular — versão de teste")
 
